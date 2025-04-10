@@ -5,6 +5,11 @@ generator client {
     provider = "prisma-client-js"
 }
 
+enum ColumnType {
+  STRING
+  NUMBER
+}
+
 datasource db {
     provider = "postgresql"
     // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
@@ -58,11 +63,11 @@ model User {
     id            String    @id @default(cuid())
     name          String?
     email         String?   @unique
-    emailVerified DateTime?
     image         String?
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+    workspaces    Workspace[]
 }
 
 model VerificationToken {
@@ -71,4 +76,61 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+
+model Workspace {
+  id         String      @id @default(cuid())
+  name       String      // e.g. "My Workspace"
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation: Each workspace belongs to one user
+  tables     DataTable[] // One workspace can have many tables
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model DataTable { 
+  id           String     @id @default(cuid())
+  name         String     // A name or title for the table
+  workspaceId  String // Relation: Each table belongs to one workspace
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id])
+  columns      Column[]   // The columns defined for this table
+  rows         Row[]      // The rows of the table
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Column { 
+  id         String      @id @default(cuid())
+  table      DataTable   @relation(fields: [tableId], references: [id])
+  tableId    String
+  title      String      // Column header or label
+  position   Int         @default(autoincrement())// To define order of the columns
+  cells      Cell[]      // Cells that belong to this column (one per row)
+  dataType   ColumnType
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+
+model Row {
+  id        String      @id @default(cuid())
+  table     DataTable   @relation(fields: [tableId], references: [id])
+  tableId   String
+  cells     Cell[]      // Each row contains a cell per column
+  createdAt DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+
+
+model Cell {
+  id       String      @id @default(cuid())
+  rowId    String
+  row      Row      @relation(fields: [rowId], references: [id])
+  columnId String
+  column   Column   @relation(fields: [columnId], references: [id])
+  value    String   // For simplicity, store the cell's data as a string. Can convert/validate this data based on the column's `dataType`.
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
