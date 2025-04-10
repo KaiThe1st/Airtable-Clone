@@ -46,11 +46,28 @@ export const authConfig = {
      * @see https://next-auth.js.org/providers/github
      */
   ],
-  session: {
-    strategy: "jwt",
-  },
   adapter: PrismaAdapter(db),
   callbacks: {
+    // async signIn({ account, profile }) {
+    //   if (!profile?.email) {
+    //     throw new Error("No profile");
+    //   }
+
+    //   await db.user.upsert({
+    //     where: {
+    //       email: profile.email,
+    //     },
+    //     create: {
+    //       email: profile.email,
+    //       name: profile.name,
+    //     },
+    //     update: {
+    //       name: profile.name,
+    //     },
+    //   });
+
+    //   return true;
+    // },
     session: ({ session, user }) => ({
       ...session,
       user: {
@@ -58,11 +75,5 @@ export const authConfig = {
         id: user.id,
       },
     }),
-    // async signIn({ account, profile }) {
-    //   if (!profile?.email) {
-    //     throw new Error("No profile");
-    //   }
-    //   await prisma.user.upsert
-    // },
   },
 } satisfies NextAuthConfig;
